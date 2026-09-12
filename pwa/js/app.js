@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let isRunning = false;
   let isCalibrating = false;
   let currentCalibStep = 0;
+  let isPaused = false;
 
   // Initialize
   tracker.init((landmarks, fps) => onHandResults(landmarks, fps));
@@ -178,6 +179,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     trackingQuality.textContent = 'High Confidence 🟢';
 
+    // Process Gestures first so a wave can resume a paused session
+    const gesture = gestureEngine.processLandmarks(landmarks);
+    activeGestureText.textContent = gesture.gesture;
+    pinchDistText.textContent = gesture.pinchDist;
+
+    if (isPaused) {
+      if (gesture.action === 'WAVE') {
+        isPaused = false;
+        statusDot.className = 'status-dot active';
+        statusText.textContent = 'Tracking Active';
+        showToast('Resumed ▶️');
+      }
+      return;
+    }
+
     // Index Tip position (Landmark 8) for virtual air mouse
     const indexTip = landmarks[8];
     // Invert X because camera is mirrored
@@ -191,11 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
     virtualCursor.style.left = `${mapped.x}px`;
     virtualCursor.style.top = `${mapped.y}px`;
 
-    // Process Gestures
-    const gesture = gestureEngine.processLandmarks(landmarks);
-    activeGestureText.textContent = gesture.gesture;
-    pinchDistText.textContent = gesture.pinchDist;
-
     // Visual Cursor State
     if (gesture.pinched) {
       virtualCursor.className = 'pinched';
@@ -206,7 +217,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Process Actions
-    if (gesture.action === 'CLICK') {
+    if (gesture.action === 'WAVE') {
+      isPaused = true;
+      statusDot.className = 'status-dot';
+      statusText.textContent = 'Paused ⏸️ (wave to resume)';
+      showToast('Paused ⏸️ (wave to resume)');
+    } else if (gesture.action === 'THUMBS_UP') {
+      playClickSound(600);
+      showToast('Thumbs Up 👍');
+    } else if (gesture.action === 'CLICK') {
       playClickSound(800);
       showToast('Pinch Click 🤏');
       simulateVirtualClick(mapped.x, mapped.y);

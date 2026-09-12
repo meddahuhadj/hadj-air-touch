@@ -10,6 +10,7 @@ class GestureEngine {
     this.isGrabbed = false;
     this.historyX = [];
     this.historyY = [];
+    this.waveHistory = [];
   }
 
   setSensitivity(sensitivityVal) {
@@ -59,16 +60,26 @@ class GestureEngine {
       gestureName = 'Pinch Hold 🤏';
     }
 
-    // 3. Check Grab (Fist) state
+    // 3. Check Grab (Fist) / Thumbs-Up state
     const dMiddle = Math.hypot(middleTip.x - wrist.x, middleTip.y - wrist.y);
     const dRing = Math.hypot(ringTip.x - wrist.x, ringTip.y - wrist.y);
     const dPinky = Math.hypot(pinkyTip.x - wrist.x, pinkyTip.y - wrist.y);
     const avgDist = (dMiddle + dRing + dPinky) / 3;
 
     if (avgDist < 0.22 && !currentPinch) {
-      this.isGrabbed = true;
-      gestureName = 'Fist / Grab ✊';
-      if (action === 'NONE') action = 'GRAB';
+      const dThumb = Math.hypot(thumbTip.x - wrist.x, thumbTip.y - wrist.y);
+      if (dThumb > 0.35) {
+        // Thumb clearly stuck out past folded fingers -> Thumbs Up
+        this.isGrabbed = false;
+        if (action === 'NONE') {
+          action = 'THUMBS_UP';
+          gestureName = 'Thumbs Up 👍';
+        }
+      } else {
+        this.isGrabbed = true;
+        gestureName = 'Fist / Grab ✊';
+        if (action === 'NONE') action = 'GRAB';
+      }
     } else {
       this.isGrabbed = false;
     }
@@ -84,6 +95,29 @@ class GestureEngine {
       if (Math.abs(dx) > 0.35 && action === 'NONE') {
         action = dx > 0 ? 'SWIPE_RIGHT' : 'SWIPE_LEFT';
         gestureName = dx > 0 ? 'Swipe Right ➡️' : 'Swipe Left ⬅️';
+      }
+    }
+
+    // 5. Wave detection (rapid horizontal oscillation of the wrist)
+    if (action === 'NONE') {
+      const nowT = performance.now();
+      this.waveHistory.push({ t: nowT, x: wrist.x });
+      this.waveHistory = this.waveHistory.filter((p) => nowT - p.t < 700);
+      if (this.waveHistory.length >= 6) {
+        let reversals = 0;
+        for (let i = 1; i < this.waveHistory.length - 1; i++) {
+          const d1 = this.waveHistory[i].x - this.waveHistory[i - 1].x;
+          const d2 = this.waveHistory[i + 1].x - this.waveHistory[i].x;
+          if (d1 > 0.02 && d2 < -0.02) reversals++;
+          else if (d1 < -0.02 && d2 > 0.02) reversals++;
+        }
+        const xs = this.waveHistory.map((p) => p.x);
+        const span = Math.max(...xs) - Math.min(...xs);
+        if (reversals >= 2 && span > 0.15) {
+          action = 'WAVE';
+          gestureName = 'Wave 👋';
+          this.waveHistory = [];
+        }
       }
     }
 

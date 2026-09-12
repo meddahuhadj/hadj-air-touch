@@ -90,6 +90,8 @@ python run_pwa.py
 
 This launches a local web server at `http://localhost:8080` and opens your browser. You can click **"Install App"** in the browser to install HADJ AIR TOUCH as a standalone desktop/mobile app that works 100% offline!
 
+A hosted copy of the PWA is deployed at [https://hadj-air-touch-pwa.vercel.app](https://hadj-air-touch-pwa.vercel.app). The web version supports the same core gestures (pointer, pinch click, double pinch, grab/drag, swipe) plus **Thumbs Up 👍** (feedback) and **Wave 👋** (pause/resume tracking).
+
 ### Headless / Self-test mode
 
 ```bash
