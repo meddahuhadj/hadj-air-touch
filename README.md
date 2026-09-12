@@ -27,6 +27,8 @@
 - **Profiles**: Auto-switching per application (browser, presentation, media,
   CAD, office, developer)
 - **Privacy-First**: All processing local; no cloud upload
+- **Cursor Halo HUD**: transparent click-through overlay showing exactly where
+  the app directs the cursor (gesture accent + click pulse)
 - **Accessibility Mode**: Larger cursor, slower movement, high contrast
 - **Emergency Stop**: `Ctrl+Alt+H` instantly pauses all interaction
 

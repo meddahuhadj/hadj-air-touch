@@ -195,6 +195,14 @@ class TestMoveCursor(unittest.TestCase):
         self.pc._move_cursor(_hand(index_tip=(0.3, 0.3)))
         self.assertIsNone(self.pc._one_euro)
 
+    def test_position_sink_receives_moved_pos(self):
+        sink = Mock()
+        self.pc.set_position_sink(sink)
+        self.dispatcher.map_fingertip_to_screen.return_value = (960.0, 540.0)
+        self.dispatcher.apply_cursor_settings.return_value = (961.0, 541.0)
+        self.pc._move_cursor(_hand(index_tip=(0.5, 0.3)))
+        sink.assert_called_once_with((961.0, 541.0))
+
 
 class TestHandleTouchAction(unittest.TestCase):
     def setUp(self):

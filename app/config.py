@@ -99,6 +99,13 @@ class PrivacyConfig:
     pause_on_foucs_loss: bool = False
 
 @dataclass
+class OverlayConfig:
+    enabled: bool = False
+    show_halo: bool = True
+    size: int = 64
+    opacity: float = 0.85
+
+@dataclass
 class AppConfig:
     camera: CameraConfig = field(default_factory=CameraConfig)
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
@@ -108,6 +115,7 @@ class AppConfig:
     accessibility: AccessibilityConfig = field(default_factory=AccessibilityConfig)
     voice: VoiceConfig = field(default_factory=VoiceConfig)
     privacy: PrivacyConfig = field(default_factory=PrivacyConfig)
+    overlay: OverlayConfig = field(default_factory=OverlayConfig)
     monitor: int = 0
     mode: str = "air_mouse"
     active_profile: str = "general"
@@ -236,6 +244,7 @@ class Settings:
             "accessibility": AccessibilityConfig,
             "voice": VoiceConfig,
             "privacy": PrivacyConfig,
+            "overlay": OverlayConfig,
         }
         kwargs: dict[str, Any] = {}
         for key, cls_ in mapping.items():

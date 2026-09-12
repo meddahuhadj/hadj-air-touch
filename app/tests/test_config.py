@@ -138,6 +138,26 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(s.config.cursor.dead_zone, 0.005)
         self.assertFalse(s.config.cursor.one_euro)
 
+    def test_overlay_defaults(self):
+        s = Settings(self._config_path)
+        self.assertFalse(s.config.overlay.enabled)
+        self.assertTrue(s.config.overlay.show_halo)
+        self.assertEqual(s.config.overlay.size, 64)
+        self.assertAlmostEqual(s.config.overlay.opacity, 0.85)
+
+    def test_overlay_enabled_roundtrip(self):
+        s = Settings(self._config_path)
+        s.set("overlay.enabled", True)
+        s2 = Settings(self._config_path)
+        self.assertTrue(s2.config.overlay.enabled)
+
+    def test_legacy_settingsfile_without_overlay(self):
+        self._config_path.write_text(
+            json.dumps({"mode": "virtual_touch"}), encoding="utf-8")
+        s = Settings(self._config_path)
+        self.assertFalse(s.config.overlay.enabled)
+        self.assertEqual(s.config.mode, "virtual_touch")
+
 
 if __name__ == "__main__":
     unittest.main()

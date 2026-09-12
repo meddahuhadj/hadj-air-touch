@@ -52,6 +52,7 @@ class PipelineController:
         # Injected lazily
         self._dispatcher: Any = None
         self._screen_mgr: Any = None
+        self._position_sink: Any = None
 
     # -- component injection --
 
@@ -81,6 +82,18 @@ class PipelineController:
 
     def set_screen_manager(self, sm: Any) -> None:
         self._screen_mgr = sm
+
+    def set_position_sink(self, sink: Any) -> None:
+        """Register a callable receiving the latest cursor position (for HUDs)."""
+        self._position_sink = sink
+
+    def _publish_position(self, pos: tuple[float, float]) -> None:
+        if self._position_sink is None:
+            return
+        try:
+            self._position_sink(pos)
+        except Exception:  # pragma: no cover - defensive
+            _LOG.debug("Position sink call failed", exc_info=True)
 
     # -- lifecycle --
 
@@ -324,6 +337,7 @@ class PipelineController:
             screen_height=size[1],
         )
         self._last_cursor_pos = pos
+        self._publish_position(pos)
         try:
             self._dispatcher.mouse.move_smoothed(pos)
         except Exception as exc:
@@ -337,6 +351,7 @@ class PipelineController:
         if action == "tap":
             if vt.is_virtual_touch_active and screen_pos is not None:
                 self._dispatcher.mouse.set_position(screen_pos[0], screen_pos[1])
+                self._publish_position(screen_pos)
             self._dispatcher.mouse.left_click()
         elif action == "long_press":
             self._dispatcher.mouse.mouse_down("left")

@@ -50,6 +50,8 @@ from app.windows_input.keyboard import KeyboardController
 from app.windows_input.screen import ScreenManager
 from app.windows_input.dispatcher import InputDispatcher
 from app.ui.overlay_keyboard import OverlayKeyboard
+from app.ui.overlay_state import OverlayPositionStore
+from app.ui.overlay_cursor import CursorHaloOverlay
 from app.camera.manager import CameraManager
 from app.camera.capture import CameraCapture
 from app.privacy.guard import PrivacyGuard
@@ -92,6 +94,10 @@ class MainWindow(QMainWindow):
         self.kb_ctrl = KeyboardController()
         self.keyboard_overlay = OverlayKeyboard()
         self.keyboard_overlay.keyPressed.connect(self._on_overlay_key)
+
+        # Transparent cursor-halo HUD – shows where the app directs the cursor
+        self.overlay_store = OverlayPositionStore()
+        self.cursor_overlay = CursorHaloOverlay(self.overlay_store)
         self.screen_mgr = ScreenManager()
         primary = self.screen_mgr.primary
         sw, sh = (primary.width, primary.height) if primary else (1920, 1080)
@@ -104,6 +110,10 @@ class MainWindow(QMainWindow):
         self.voice.set_command_callback(self._on_voice_command)
         self.bus.subscribe(EventType.CALIBRATION_STARTED, lambda _e: self._on_calib_start())
         self.pipeline = PipelineController(self.bus, self.settings)
+        self.pipeline.set_position_sink(self.overlay_store.update)
+        self.bus.subscribe(EventType.GESTURE_DETECTED, self._on_overlay_gesture)
+        self.bus.subscribe(EventType.MOUSE_CLICK, lambda _e: self.overlay_store.notify_click())
+        self.bus.subscribe(EventType.MOUSE_DOUBLE_CLICK, lambda _e: self.overlay_store.notify_click())
         self.pipeline.set_camera(self.camera)
         self.pipeline.set_tracker(self.tracker)
         self.pipeline.set_gesture_engine(self.gesture_engine)
@@ -124,6 +134,9 @@ class MainWindow(QMainWindow):
             self.bus, self.mouse_ctrl, self.kb_ctrl, self.calibrator, self.settings,
         )
         self.pipeline.set_dispatcher(self.dispatcher)
+
+        if self.settings.config.overlay.enabled:
+            self.cursor_overlay.start()
 
         self._build_ui()
         self._connect_signals()
@@ -556,10 +569,14 @@ class MainWindow(QMainWindow):
         self._one_euro_chk = QCheckBox("One Euro filter (low-latency jitter reduction)")
         self._one_euro_chk.setChecked(cursor_cfg.one_euro)
         self._one_euro_chk.toggled.connect(self._on_one_euro_toggle)
+        self._overlay_chk = QCheckBox("Cursor halo overlay (HUD)")
+        self._overlay_chk.setChecked(self.settings.config.overlay.enabled)
+        self._overlay_chk.toggled.connect(self._on_overlay_toggle)
         card.card_layout.addWidget(self._cursor_speed)
         card.card_layout.addWidget(self._cursor_smoothing)
         card.card_layout.addWidget(self._cursor_dead_zone)
         card.card_layout.addWidget(self._one_euro_chk)
+        card.card_layout.addWidget(self._overlay_chk)
         layout.addWidget(card)
 
         vt_cfg = self.settings.config.virtual_touch
@@ -879,6 +896,18 @@ class MainWindow(QMainWindow):
     def _on_one_euro_toggle(self, checked: bool) -> None:
         self.settings.set("cursor.one_euro", checked)
 
+    def _on_overlay_toggle(self, checked: bool) -> None:
+        self.settings.set("overlay.enabled", checked)
+        if checked:
+            self.cursor_overlay.start()
+        else:
+            self.cursor_overlay.stop()
+
+    def _on_overlay_gesture(self, event: Event) -> None:
+        gesture = (event.data or {}).get("gesture")
+        name = getattr(gesture, "name", None)
+        self.overlay_store.set_gesture(name.name if hasattr(name, "name") else None)
+
     def _on_touch_depth_change(self, value: float) -> None:
         self.settings.set("virtual_touch.touch_depth_cm", value)
         self._apply_vt_settings()
@@ -1095,5 +1124,6 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:  # noqa: N802
         self.keyboard_overlay.hide()
+        self.cursor_overlay.stop()
         self._on_exit()
         event.accept()
