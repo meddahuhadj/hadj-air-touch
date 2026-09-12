@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "name": "hadj-air-touch-pwa",
+  "builds": [
+    {
+      "src": "pwa/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/sw.js",
+      "dest": "/pwa/sw.js",
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "service-worker-allowed": "/"
+      }
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/pwa/manifest.json"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/pwa/$1"
+    }
+  ]
+}

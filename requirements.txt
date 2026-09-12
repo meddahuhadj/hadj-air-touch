@@ -1,0 +1,26 @@
+# HADJ AIR TOUCH - Python dependencies
+# Install on Windows 11 with:  python -m pip install -r requirements.txt
+
+# --- Core UI ---
+PySide6>=6.6,<6.10
+
+# --- Camera ---
+opencv-python>=4.8,<5
+
+# --- AI hand tracking ---
+# NOTE: mediapipe 1.0+ dropped the legacy `mediapipe.solutions` API that this
+# app uses (replaced by the new Tasks API), so pin to the last 0.10.x release.
+mediapipe>=0.10,<1.0
+
+# --- Mathematics ---
+numpy>=1.26,<2
+
+# --- Optional: additional AI (depth / ONNX models) ---
+onnxruntime>=1.17 ; platform_system == "Windows"
+
+# --- Optional: local voice recognition (offline) ---
+# vosk>=0.3.45
+# pyaudio>=0.2.14
+
+# --- Optional: packaging ---
+# pyinstaller>=6.6

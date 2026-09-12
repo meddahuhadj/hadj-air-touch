@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HADJ AIR TOUCH - PWA Virtual Touchscreen</title>
+  <meta name="description" content="AI-powered virtual touchscreen application in browser using camera hand tracking and gesture control.">
+  <meta name="theme-color" content="#0078d4">
+  
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- Design System & Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- MediaPipe Hands & Camera Utils CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">H</div>
+      <div class="brand-title">HADJ AIR TOUCH</div>
+      <div class="brand-badge">PWA Version</div>
+    </div>
+
+    <div class="header-status">
+      <div class="status-pill">
+        <div id="status-dot" class="status-dot"></div>
+        <span id="status-text">Ready</span>
+      </div>
+
+      <div class="status-pill">
+        <span>⚡ <strong id="fps-counter">0 FPS</strong></span>
+      </div>
+
+      <button id="btn-pwa-install" class="btn btn-secondary" style="display: none;">
+        📲 Install App
+      </button>
+
+      <button id="btn-emergency" class="btn btn-danger">
+        🚨 Emergency Stop
+      </button>
+    </div>
+  </header>
+
+  <!-- App Main Layout Grid -->
+  <div class="app-container">
+
+    <!-- Sidebar Controls -->
+    <aside class="sidebar">
+      
+      <!-- Tracking Controller Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Camera Tracking</span>
+          <span id="tracking-quality" style="color: var(--accent-cyan); font-size: 11px;">Inactive</span>
+        </div>
+        <button id="btn-start" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;">
+          ▶ START TRACKING
+        </button>
+      </div>
+
+      <!-- Sensitivity & Settings Card -->
+      <div class="card">
+        <div class="card-title">Settings & Sensitivity</div>
+        
+        <div class="control-group">
+          <div class="control-label">
+            <span>Pinch Sensitivity</span>
+            <span id="sensitivity-val">5</span>
+          </div>
+          <input type="range" id="sensitivity-slider" class="control-slider" min="1" max="10" value="5">
+        </div>
+      </div>
+
+      <!-- Calibration Card -->
+      <div class="card">
+        <div class="card-title">Virtual Touch Calibration</div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+          Calibrate 4 corners of your screen to transform camera space into precise touch coordinates.
+        </p>
+        <button id="btn-calibrate" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+          🎯 4-Point Calibration
+        </button>
+      </div>
+
+      <!-- Live Gesture Monitor -->
+      <div class="card">
+        <div class="card-title">Live Gesture Monitor</div>
+        <div class="control-group">
+          <div class="control-label">
+            <span>Active Gesture:</span>
+            <strong id="active-gesture" style="color: var(--accent-cyan);">None</strong>
+          </div>
+          <div class="control-label">
+            <span>Pinch Distance:</span>
+            <span id="pinch-dist" style="font-family: var(--font-mono);">0.000</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gesture Reference Guide -->
+      <div class="card">
+        <div class="card-title">Supported Gestures</div>
+        <div class="gesture-list">
+          <div class="gesture-item">
+            <span>Pointer Move</span>
+            <span class="gesture-badge">Index Finger ☝️</span>
+          </div>
+          <div class="gesture-item">
+            <span>Pinch Click</span>
+            <span class="gesture-badge">Thumb + Index 🤏</span>
+          </div>
+          <div class="gesture-item">
+            <span>Double Click</span>
+            <span class="gesture-badge">Double Pinch 🤏🤏</span>
+          </div>
+          <div class="gesture-item">
+            <span>Grab / Drag</span>
+            <span class="gesture-badge">Fist / Grab ✊</span>
+          </div>
+          <div class="gesture-item">
+            <span>Emergency Stop</span>
+            <span class="gesture-badge">Ctrl + Alt + H</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main Viewport (Video Stream & Canvas Overlay) -->
+    <main class="viewport">
+      
+      <!-- Video Container with Landmark Overlay -->
+      <div class="video-wrapper">
+        <video id="webcam-video" playsinline muted></video>
+        <canvas id="output-canvas"></canvas>
+      </div>
+
+      <!-- Toast Notification Badge -->
+      <div id="toast-notification" class="toast-notification">
+        HADJ AIR TOUCH PWA Loaded
+      </div>
+
+      <!-- Virtual Cursor Pointer Overlay -->
+      <div id="virtual-cursor"></div>
+
+      <!-- 4-Point Calibration Overlay Modal -->
+      <div id="calibration-modal" class="calibration-modal">
+        <div class="calibration-instructions">
+          <h2>🎯 Screen Calibration</h2>
+          <p id="calib-instruction">Point your index finger at the active corner and PINCH 🤏 to lock.</p>
+        </div>
+
+        <div class="calibration-target-box">
+          <div id="calib-tl" class="calib-point" style="top: 5%; left: 5%;">TL</div>
+          <div id="calib-tr" class="calib-point" style="top: 5%; left: 95%;">TR</div>
+          <div id="calib-br" class="calib-point" style="top: 95%; left: 95%;">BR</div>
+          <div id="calib-bl" class="calib-point" style="top: 95%; left: 5%;">BL</div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="js/pwa-register.js"></script>
+  <script src="js/calibration.js"></script>
+  <script src="js/gestures.js"></script>
+  <script src="js/tracker.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

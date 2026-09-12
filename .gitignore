@@ -1,0 +1,37 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Build output
+build/
+dist/
+*.spec
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# Settings (local machine data)
+settings.json
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Test artifacts
+.pytest_cache/
+.result.json
+.vercel
+
+# Agent local state
+.claude/
+
