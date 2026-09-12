@@ -12,7 +12,8 @@
 
 - **Air Mouse**: Index finger controls the Windows cursor
   - **Jitter control**: dead zone + optional **One Euro filter** (low-latency
-    smoothing) keep the cursor rock-still when your hand is
+    smoothing) keep the cursor rock-still when your hand is; out-of-bounds
+    fingertip is clamped to the visible desktop
 - **Virtual Touch**: Finger reaching a virtual plane triggers touch actions
 - **Gesture Engine**: Pinch-to-click, double-pinch, right-click, swipe, zoom, grab,
   thumbs-up (volume), wave (pause/resume)
@@ -94,7 +95,7 @@ python run_pwa.py
 
 This launches a local web server at `http://localhost:8080` and opens your browser. You can click **"Install App"** in the browser to install HADJ AIR TOUCH as a standalone desktop/mobile app that works 100% offline!
 
-A hosted copy of the PWA is deployed at [https://hadj-air-touch-pwa.vercel.app](https://hadj-air-touch-pwa.vercel.app). The web version supports the same core gestures (pointer, pinch click, double pinch, grab/drag, swipe) plus **Thumbs Up 👍** (feedback) and **Wave 👋** (pause/resume tracking).
+A hosted copy of the PWA is deployed at [https://hadj-air-touch-pwa.vercel.app](https://hadj-air-touch-pwa.vercel.app). The web version supports the same core gestures (pointer, pinch click, double pinch, grab/drag, swipe) plus **Thumbs Up 👍** (feedback) and **Wave 👋** (pause/resume tracking), with the same dead-zone + smoothing jitter control as the desktop app.
 
 ### Headless / Self-test mode
 

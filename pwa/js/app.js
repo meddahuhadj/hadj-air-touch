@@ -43,6 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentCalibStep = 0;
   let isPaused = false;
 
+  // Cursor jitter control (mirrors the desktop dead-zone + smoothing)
+  let cursorX = null;
+  let cursorY = null;
+  const CURSOR_SMOOTH_ALPHA = 0.35;
+  const CURSOR_DEAD_ZONE_PX = 4;
+
   // Initialize
   tracker.init((landmarks, fps) => onHandResults(landmarks, fps));
 
@@ -99,6 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function stopTracking() {
     tracker.stop();
     isRunning = false;
+    cursorX = null;
+    cursorY = null;
     btnStart.textContent = '▶ START TRACKING';
     btnStart.classList.replace('btn-secondary', 'btn-primary');
     statusDot.className = 'status-dot';
@@ -203,9 +211,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Transform using 4-point calibrator or direct viewport mapping
     const mapped = calibrator.transformPoint(camX, camY, window.innerWidth, window.innerHeight);
 
+    // Jitter control: ignore sub-threshold drift, then ease toward the target.
+    // The raw `mapped` point stays available for calibration/click logic.
+    if (cursorX === null) {
+      cursorX = mapped.x;
+      cursorY = mapped.y;
+    } else {
+      const dx = mapped.x - cursorX;
+      const dy = mapped.y - cursorY;
+      if (Math.hypot(dx, dy) > CURSOR_DEAD_ZONE_PX) {
+        cursorX += dx * CURSOR_SMOOTH_ALPHA;
+        cursorY += dy * CURSOR_SMOOTH_ALPHA;
+      }
+    }
+
     // Update Virtual Cursor Position
-    virtualCursor.style.left = `${mapped.x}px`;
-    virtualCursor.style.top = `${mapped.y}px`;
+    virtualCursor.style.left = `${cursorX}px`;
+    virtualCursor.style.top = `${cursorY}px`;
 
     // Visual Cursor State
     if (gesture.pinched) {

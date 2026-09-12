@@ -81,11 +81,14 @@ class InputDispatcher:
         acceleration: float = 1.0,
         dead_zone: float = 0.0,
         screen_height: int = 1080,
+        screen_size: tuple[int, int] | None = None,
     ) -> tuple[float, float]:
         """Apply sensitivity + exponential smoothing towards a target position.
 
         ``dead_zone`` is a fraction of the screen height: sub-threshold deltas
         are ignored entirely, so a still hand produces zero cursor drift.
+        ``screen_size`` clamps the result to the visible desktop so a slightly
+        out-of-bounds fingertip never pushes the cursor off-screen.
         """
         delta_x = screen_point[0] - mouse_pos[0]
         delta_y = screen_point[1] - mouse_pos[1]
@@ -103,7 +106,16 @@ class InputDispatcher:
         alpha = min(1.0, max(0.0, smoothing))
         dx = delta_x * gain * (1.0 - alpha) if alpha < 1.0 else delta_x * gain
         dy = delta_y * gain * (1.0 - alpha) if alpha < 1.0 else delta_y * gain
-        return (mouse_pos[0] + dx, mouse_pos[1] + dy)
+        result = (mouse_pos[0] + dx, mouse_pos[1] + dy)
+
+        # Keep the cursor on the visible desktop
+        if screen_size is not None:
+            sw, sh = screen_size
+            result = (
+                max(0.0, min(float(sw), result[0])),
+                max(0.0, min(float(sh), result[1])),
+            )
+        return result
 
     # -- event wiring --
 

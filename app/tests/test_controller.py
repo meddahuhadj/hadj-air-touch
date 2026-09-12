@@ -175,6 +175,7 @@ class TestMoveCursor(unittest.TestCase):
         kwargs = self.dispatcher.apply_cursor_settings.call_args.kwargs
         self.assertEqual(kwargs["dead_zone"], 0.005)
         self.assertEqual(kwargs["screen_height"], 1080)
+        self.assertEqual(kwargs["screen_size"], (1920, 1080))
 
     def test_one_euro_filter_engaged_when_enabled(self):
         self.pc.settings.set("cursor.one_euro", True)

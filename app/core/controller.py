@@ -335,6 +335,7 @@ class PipelineController:
             acceleration=cur.cursor.acceleration,
             dead_zone=cur.cursor.dead_zone,
             screen_height=size[1],
+            screen_size=(size[0], size[1]),
         )
         self._last_cursor_pos = pos
         self._publish_position(pos)

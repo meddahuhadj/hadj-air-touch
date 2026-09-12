@@ -95,6 +95,30 @@ class TestCursorSettings(unittest.TestCase):
                                              speed=1.0, smoothing=0.0)
         self.assertEqual(r1, r2)
 
+    def test_clamps_to_screen_bounds(self):
+        r = self.disp.apply_cursor_settings((2000, 1150), (100, 100),
+                                            speed=1.0, smoothing=0.0,
+                                            screen_size=(1920, 1080))
+        self.assertEqual(r, (1920.0, 1080.0))
+
+    def test_clamps_negative_coordinates(self):
+        r = self.disp.apply_cursor_settings((-50, -50), (100, 100),
+                                            speed=1.0, smoothing=0.0,
+                                            screen_size=(1920, 1080))
+        self.assertEqual(r, (0.0, 0.0))
+
+    def test_clamp_noop_inside_bounds(self):
+        r = self.disp.apply_cursor_settings((200, 200), (100, 100),
+                                            speed=1.0, smoothing=0.0,
+                                            screen_size=(1920, 1080))
+        self.assertLessEqual(r[0], 200.0)
+        self.assertGreaterEqual(r[0], 100.0)
+
+    def test_clamp_off_when_no_screen_size(self):
+        r = self.disp.apply_cursor_settings((2000, 1150), (100, 100),
+                                            speed=1.0, smoothing=0.0)
+        self.assertGreater(r[0], 1920.0)
+
 
 class TestShortcutActions(unittest.TestCase):
     def setUp(self):
