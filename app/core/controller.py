@@ -11,6 +11,7 @@ from app.core.state import AppState, AppStatus, Mode
 from app.config import Settings
 from app.services.telemetry import Telemetry
 from app.calibration.calibrator import CalibState
+from app.virtual_touch.smoothing import OneEuroFilter
 
 if TYPE_CHECKING:
     from app.camera.capture import CameraCapture
@@ -43,6 +44,7 @@ class PipelineController:
         self._last_frame_time: float = 0.0
         self._last_cursor_pos: Any = None
         self._hand_was_visible: bool = False
+        self._one_euro: OneEuroFilter | None = None
 
         # Subscribe to emergency stop
         self.bus.subscribe(EventType.EMERGENCY_STOP, self._on_emergency)
@@ -299,12 +301,27 @@ class PipelineController:
 
         target = self._dispatcher.map_fingertip_to_screen(tip, size)
         cur = self.settings.config
+
+        # Optional One Euro filter: low-latency jitter reduction on the raw
+        # mapped target, before sensitivity/smoothing are applied.
+        if cur.cursor.one_euro:
+            if self._one_euro is None:
+                self._one_euro = OneEuroFilter(
+                    min_cutoff=cur.cursor.one_euro_min_cutoff,
+                    beta=cur.cursor.one_euro_beta,
+                )
+            target = self._one_euro.process(target, time.perf_counter())
+        else:
+            self._one_euro = None
+
         pos = self._dispatcher.apply_cursor_settings(
             target,
             self._last_cursor_pos or target,
             speed=cur.cursor.speed,
             smoothing=cur.cursor.smoothing,
             acceleration=cur.cursor.acceleration,
+            dead_zone=cur.cursor.dead_zone,
+            screen_height=size[1],
         )
         self._last_cursor_pos = pos
         try:

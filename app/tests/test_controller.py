@@ -168,6 +168,33 @@ class TestMoveCursor(unittest.TestCase):
             Settings._instance = None
             pc2.stop()
 
+    def test_dead_zone_and_screen_height_passed_through(self):
+        self.dispatcher.map_fingertip_to_screen.return_value = (960.0, 540.0)
+        self.dispatcher.apply_cursor_settings.return_value = (961.0, 541.0)
+        self.pc._move_cursor(_hand(index_tip=(0.5, 0.3)))
+        kwargs = self.dispatcher.apply_cursor_settings.call_args.kwargs
+        self.assertEqual(kwargs["dead_zone"], 0.005)
+        self.assertEqual(kwargs["screen_height"], 1080)
+
+    def test_one_euro_filter_engaged_when_enabled(self):
+        self.pc.settings.set("cursor.one_euro", True)
+        self.assertIsNone(self.pc._one_euro)
+        self.dispatcher.map_fingertip_to_screen.return_value = (500.0, 300.0)
+        self.dispatcher.apply_cursor_settings.return_value = (500.0, 300.0)
+        self.pc._move_cursor(_hand(index_tip=(0.3, 0.3)))
+        self.assertIsNotNone(self.pc._one_euro)
+        self.dispatcher.map_fingertip_to_screen.assert_called()
+
+    def test_one_euro_reset_when_disabled(self):
+        self.pc.settings.set("cursor.one_euro", True)
+        self.dispatcher.map_fingertip_to_screen.return_value = (500.0, 300.0)
+        self.dispatcher.apply_cursor_settings.return_value = (500.0, 300.0)
+        self.pc._move_cursor(_hand(index_tip=(0.3, 0.3)))
+        self.assertIsNotNone(self.pc._one_euro)
+        self.pc.settings.set("cursor.one_euro", False)
+        self.pc._move_cursor(_hand(index_tip=(0.3, 0.3)))
+        self.assertIsNone(self.pc._one_euro)
+
 
 class TestHandleTouchAction(unittest.TestCase):
     def setUp(self):

@@ -193,6 +193,19 @@ def _run_self_test() -> int:
         print(f"  [FAIL] Smoothing: {exc}")
         ok = False
 
+    # 5) One Euro filter
+    try:
+        from app.virtual_touch.smoothing import OneEuroFilter  # noqa: PLC0415
+        oe = OneEuroFilter(min_cutoff=1.0, beta=0.1)
+        noisy = [(100 + (i % 3) * 2, 200) for i in range(20)]
+        out = [oe.process(p) for p in noisy]
+        span = max(p[0] for p in out) - min(p[0] for p in out)
+        assert span <= 4.0 and span > 0.0
+        print(f"  [PASS] One Euro filter: jitter {max(p[0] for p in noisy) - min(p[0] for p in noisy)}px -> {span:.2f}px")
+    except Exception as exc:
+        print(f"  [FAIL] One Euro filter: {exc}")
+        ok = False
+
     if ok:
         print("\nAll self-tests passed.")
         return 0

@@ -58,6 +58,10 @@ class CursorConfig:
     speed: float = 1.0
     acceleration: float = 1.2
     smoothing: float = 0.5
+    dead_zone: float = 0.005
+    one_euro: bool = False
+    one_euro_min_cutoff: float = 1.0
+    one_euro_beta: float = 0.007
 
 @dataclass
 class SafetyConfig:

@@ -549,10 +549,17 @@ class MainWindow(QMainWindow):
         card = Card("Cursor")
         self._cursor_speed = SliderRow("Cursor Speed", 0.1, 3.0, cursor_cfg.speed)
         self._cursor_smoothing = SliderRow("Cursor Smoothing", 0.0, 1.0, cursor_cfg.smoothing, 2)
+        self._cursor_dead_zone = SliderRow("Dead Zone", 0.0, 0.05, cursor_cfg.dead_zone, 3)
         self._cursor_speed.valueChanged.connect(self._on_cursor_speed_change)
         self._cursor_smoothing.valueChanged.connect(self._on_cursor_smoothing_change)
+        self._cursor_dead_zone.valueChanged.connect(self._on_cursor_dead_zone_change)
+        self._one_euro_chk = QCheckBox("One Euro filter (low-latency jitter reduction)")
+        self._one_euro_chk.setChecked(cursor_cfg.one_euro)
+        self._one_euro_chk.toggled.connect(self._on_one_euro_toggle)
         card.card_layout.addWidget(self._cursor_speed)
         card.card_layout.addWidget(self._cursor_smoothing)
+        card.card_layout.addWidget(self._cursor_dead_zone)
+        card.card_layout.addWidget(self._one_euro_chk)
         layout.addWidget(card)
 
         vt_cfg = self.settings.config.virtual_touch
@@ -865,6 +872,12 @@ class MainWindow(QMainWindow):
 
     def _on_cursor_smoothing_change(self, value: float) -> None:
         self.settings.set("cursor.smoothing", value)
+
+    def _on_cursor_dead_zone_change(self, value: float) -> None:
+        self.settings.set("cursor.dead_zone", value)
+
+    def _on_one_euro_toggle(self, checked: bool) -> None:
+        self.settings.set("cursor.one_euro", checked)
 
     def _on_touch_depth_change(self, value: float) -> None:
         self.settings.set("virtual_touch.touch_depth_cm", value)

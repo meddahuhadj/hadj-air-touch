@@ -11,6 +11,8 @@
 ## Features
 
 - **Air Mouse**: Index finger controls the Windows cursor
+  - **Jitter control**: dead zone + optional **One Euro filter** (low-latency
+    smoothing) keep the cursor rock-still when your hand is
 - **Virtual Touch**: Finger reaching a virtual plane triggers touch actions
 - **Gesture Engine**: Pinch-to-click, double-pinch, right-click, swipe, zoom, grab,
   thumbs-up (volume), wave (pause/resume)

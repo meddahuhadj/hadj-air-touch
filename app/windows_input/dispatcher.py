@@ -79,10 +79,22 @@ class InputDispatcher:
         speed: float = 1.0,
         smoothing: float = 0.5,
         acceleration: float = 1.0,
+        dead_zone: float = 0.0,
+        screen_height: int = 1080,
     ) -> tuple[float, float]:
-        """Apply sensitivity + exponential smoothing towards a target position."""
+        """Apply sensitivity + exponential smoothing towards a target position.
+
+        ``dead_zone`` is a fraction of the screen height: sub-threshold deltas
+        are ignored entirely, so a still hand produces zero cursor drift.
+        """
         delta_x = screen_point[0] - mouse_pos[0]
         delta_y = screen_point[1] - mouse_pos[1]
+
+        # Dead zone – absorb micro-jitter when the hand is (nearly) still
+        if dead_zone > 0.0:
+            dz_px = dead_zone * max(1.0, float(screen_height))
+            if (delta_x ** 2 + delta_y ** 2) ** 0.5 <= dz_px:
+                return mouse_pos
 
         # Acceleration – amplify larger movements
         dist = (delta_x ** 2 + delta_y ** 2) ** 0.5

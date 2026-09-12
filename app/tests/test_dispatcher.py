@@ -74,6 +74,27 @@ class TestCursorSettings(unittest.TestCase):
                                                    speed=1.0, smoothing=0.9)
         self.assertLess(r_smooth[0], r_raw[0])
 
+    def test_dead_zone_holds_cursor_still(self):
+        # dead_zone 0.02 of 1080 => ~21.6px; a 10px jitter must be ignored
+        r = self.disp.apply_cursor_settings((110, 100), (100, 100),
+                                            speed=1.0, smoothing=0.0,
+                                            dead_zone=0.02, screen_height=1080)
+        self.assertEqual(r, (100.0, 100.0))
+
+    def test_dead_zone_allows_large_moves(self):
+        r = self.disp.apply_cursor_settings((160, 100), (100, 100),
+                                            speed=1.0, smoothing=0.0,
+                                            dead_zone=0.02, screen_height=1080)
+        self.assertGreater(r[0], 150.0)
+
+    def test_dead_zone_zero_has_no_effect(self):
+        r1 = self.disp.apply_cursor_settings((110, 100), (100, 100),
+                                             speed=1.0, smoothing=0.0,
+                                             dead_zone=0.0)
+        r2 = self.disp.apply_cursor_settings((110, 100), (100, 100),
+                                             speed=1.0, smoothing=0.0)
+        self.assertEqual(r1, r2)
+
 
 class TestShortcutActions(unittest.TestCase):
     def setUp(self):

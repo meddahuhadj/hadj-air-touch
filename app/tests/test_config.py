@@ -113,6 +113,31 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(s.config.camera.index, 2)
         self.assertTrue(s.config.gestures["point"])
 
+    def test_cursor_new_fields_defaults(self):
+        s = Settings(self._config_path)
+        cfg = s.config.cursor
+        self.assertEqual(cfg.dead_zone, 0.005)
+        self.assertFalse(cfg.one_euro)
+        self.assertEqual(cfg.one_euro_min_cutoff, 1.0)
+        self.assertEqual(cfg.one_euro_beta, 0.007)
+
+    def test_cursor_new_fields_roundtrip(self):
+        s = Settings(self._config_path)
+        s.set("cursor.dead_zone", 0.02)
+        s.set("cursor.one_euro", True)
+        s2 = Settings(self._config_path)
+        self.assertAlmostEqual(s2.config.cursor.dead_zone, 0.02)
+        self.assertTrue(s2.config.cursor.one_euro)
+
+    def test_legacy_settingsfile_without_cursor_fields(self):
+        # Files saved before dead_zone / one_euro existed must load with defaults.
+        self._config_path.write_text(
+            json.dumps({"cursor": {"speed": 1.5}}), encoding="utf-8")
+        s = Settings(self._config_path)
+        self.assertEqual(s.config.cursor.speed, 1.5)
+        self.assertEqual(s.config.cursor.dead_zone, 0.005)
+        self.assertFalse(s.config.cursor.one_euro)
+
 
 if __name__ == "__main__":
     unittest.main()
