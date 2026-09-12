@@ -41,6 +41,8 @@ class CalibrationConfig:
     depth_threshold: float = 0.04
     smoothing: float = 0.6
     confidence_min: float = 0.7
+    save_homography: bool = True
+    homography_state: dict | None = None
 
 @dataclass
 class VirtualTouchConfig:

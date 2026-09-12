@@ -102,6 +102,8 @@ class MainWindow(QMainWindow):
         primary = self.screen_mgr.primary
         sw, sh = (primary.width, primary.height) if primary else (1920, 1080)
         self.calibrator = Calibrator(screen_width=sw, screen_height=sh)
+        if self.settings.config.calibration.save_homography:
+            self.calibrator.restore_result(self.settings.config.calibration.homography_state)
         self.privacy = PrivacyGuard(self.bus)
         self.profiles = ProfileManager()
         self.quality_mon = TrackingQualityMonitor()
@@ -312,6 +314,9 @@ class MainWindow(QMainWindow):
         card.card_layout.addWidget(self._calib_status)
         self._calib_quality = QLabel("")
         card.card_layout.addWidget(self._calib_quality)
+        if self.calibrator.result.homography is not None and self.settings.config.calibration.save_homography:
+            self._calib_quality.setText(
+                f"Saved calibration loaded — Quality: {self.calibrator.result.quality:.0%}")
         self._calib_instruction = QLabel("")
         card.card_layout.addWidget(self._calib_instruction)
         layout.addWidget(card)
@@ -587,6 +592,10 @@ class MainWindow(QMainWindow):
         self._touch_sensitivity.valueChanged.connect(self._on_touch_sensitivity_change)
         card2.card_layout.addWidget(self._touch_depth)
         card2.card_layout.addWidget(self._touch_sensitivity)
+        self._save_calib_chk = QCheckBox("Save calibration between sessions")
+        self._save_calib_chk.setChecked(self.settings.config.calibration.save_homography)
+        self._save_calib_chk.toggled.connect(self._on_save_calib_toggle)
+        card2.card_layout.addWidget(self._save_calib_chk)
         layout.addWidget(card2)
 
         card3 = Card("Interaction Distance")
@@ -764,6 +773,7 @@ class MainWindow(QMainWindow):
 
     def _on_calib_reset(self) -> None:
         self.calibrator.reset()
+        self.settings.set("calibration.homography_state", None)
         self._calib_status.setText("Ready")
         self._calib_quality.setText("")
         self._calib_instruction.setText("")
@@ -777,6 +787,9 @@ class MainWindow(QMainWindow):
         result = event.data.get("result")
         if result is not None and result.quality >= 0.5:
             self._status_touch.update("good", "Virtual Touch")
+            if self.settings.config.calibration.save_homography:
+                self.settings.set(
+                    "calibration.homography_state", self.calibrator.serialize_result())
         _LOG.info("Calibration completed from pipeline")
 
     def _on_calibration_failed(self, event: Event) -> None:
@@ -915,6 +928,11 @@ class MainWindow(QMainWindow):
     def _on_touch_sensitivity_change(self, value: float) -> None:
         self.settings.set("virtual_touch.sensitivity", value)
         self._apply_vt_settings()
+
+    def _on_save_calib_toggle(self, checked: bool) -> None:
+        self.settings.set("calibration.save_homography", checked)
+        if not checked:
+            self.settings.set("calibration.homography_state", None)
 
     def _on_interaction_dist_change(self, value: float) -> None:
         self.settings.set("virtual_touch.interaction_distance_cm", value)

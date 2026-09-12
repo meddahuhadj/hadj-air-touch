@@ -161,6 +161,66 @@ class Calibrator:
     def map_camera_to_screen(self, point: Tup2) -> Optional[Tup2]:
         return self._plane.camera_to_screen(point)
 
+    # -- persistence --
+
+    def serialize_result(self) -> Optional[dict]:
+        """Return a JSON-friendly snapshot of a successful calibration, or None."""
+        r = self._result
+        if r.homography is None:
+            return None
+        return {
+            "screen_w": self.screen_w,
+            "screen_h": self.screen_h,
+            "quality": r.quality,
+            "success": r.success,
+            "homography": [list(row) for row in r.homography],
+            "camera_points": [list(p) for p in r.camera_points],
+            "screen_points": [list(p) for p in r.screen_points],
+        }
+
+    def restore_result(self, data: Optional[dict]) -> bool:
+        """Apply a saved calibration snapshot. Returns True on success."""
+        if not data or data.get("homography") is None:
+            return False
+        try:
+            homography = [
+                [float(v) for v in row]
+                for row in data["homography"]
+            ]
+            if len(homography) != 3 or any(len(row) != 3 for row in homography):
+                return False
+            # Only restore when the monitor size matches (same setup)
+            if int(data.get("screen_w", -1)) != self.screen_w or int(data.get("screen_h", -1)) != self.screen_h:
+                _LOG.info("Saved calibration ignored: screen size mismatch")
+                return False
+
+            self._camera_points = [
+                (float(x), float(y)) for x, y in data.get("camera_points", [])
+            ]
+            self._screen_points = [
+                (float(x), float(y)) for x, y in data.get("screen_points", [])
+            ]
+            self._plane.homography = homography
+            try:
+                from app.calibration.homography import inverse_homography  # noqa: PLC0415
+                self._plane.inverse_homography = inverse_homography(homography)
+            except Exception:
+                self._plane.inverse_homography = None
+            self._result = CalibrationResult(
+                success=bool(data.get("success")),
+                quality=float(data.get("quality", 0.0)),
+                homography=homography,
+                camera_points=list(self._camera_points),
+                screen_points=list(self._screen_points),
+                message="Restored saved calibration",
+            )
+            self.state = CalibState.DONE if self._result.success else CalibState.FAILED
+            _LOG.info("Restored saved calibration (quality=%.2f)", self._result.quality)
+            return True
+        except (TypeError, ValueError) as exc:
+            _LOG.warning("Could not restore saved calibration: %s", exc)
+            return False
+
     def reset(self) -> None:
         self.state = CalibState.IDLE
         self._camera_points.clear()

@@ -17,7 +17,7 @@
 - **Virtual Touch**: Finger reaching a virtual plane triggers touch actions
 - **Gesture Engine**: Pinch-to-click, double-pinch, right-click, swipe, zoom, grab,
   thumbs-up (volume), wave (pause/resume)
-- **Screen Calibration**: 4-point homography with quality score
+- **Screen Calibration**: 4-point homography with quality score, auto-saved and restored between sessions
 - **Multi-Monitor**: Detect and target any connected display
 - **Windows Integration**: Native mouse/keyboard via `SendInput` (ctypes),
   incl. app shortcuts (undo/redo, save, copy/paste, tabs, minimize/maximize,
